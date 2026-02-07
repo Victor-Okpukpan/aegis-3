@@ -28,12 +28,14 @@ DeFi lost $3.8B in 2024 (Chainalysis) to vulnerabilities that tools like Slither
 
 1. **Gemini 3's 1M token context** - Analyze entire protocols, not single files
 2. **50,000+ historical exploits** - Pattern-match against real attack vectors via semantic RAG
-3. **Foundry PoC generation** - Executable proof-of-concepts for critical findings
+3. **Foundry PoC scaffolds** - Attack path templates to accelerate exploit verification (require human validation)
 4. **Architectural mapping** - Understand cross-contract interactions and trust boundaries
 
 ### Key Innovation
 
-We inject 69,641 indexed vulnerability patterns into Gemini 3's context, enabling it to say: *"This oracle manipulation is 87% similar to the Euler Finance exploit (March 2023). Here's the PoC."*
+We inject **69,641 indexed Solodit findings** (audit reports with severity tags, root causes, and affected code patterns) into Gemini 3's context, enabling it to reference real exploits: *"This oracle manipulation matches patterns from the Euler Finance exploit (March 2023). Here's a PoC scaffold."*
+
+**How similarity works:** Tag-based pattern matching scores findings by keyword overlap, severity alignment, and vulnerability category (e.g., "Oracle + Flash Loan + Price Manipulation"). Scores are deterministic, not embedding-based.
 
 ---
 
@@ -75,8 +77,8 @@ npm run dev
 3. **Review findings:**
    - Split-screen: Findings list + Monaco code viewer
    - Red-highlighted vulnerable lines
-   - Historical references (e.g., "87% similar to Compound rounding error")
-   - Copy-paste Foundry PoC to verify locally
+   - Historical references with pattern match scores (e.g., "Matches Compound rounding error patterns")
+   - Copy-paste Foundry PoC scaffold to verify locally
 
 **See it in action:** [3-minute demo video](https://youtube.com/demo)
 
@@ -97,29 +99,40 @@ npm run dev
 
 ## Impact
 
+**⚠️ Aegis-3 is a triage tool, not an audit replacement.** All findings require expert validation.
+
 **For Security Researchers:**
-- **60% faster initial audit** - Triage in 5 minutes vs 2 days
-- **Zero manual exploit research** - 50K patterns auto-matched
-- **PoC generation** - Saves 1-2 hours per finding
+- **60% faster initial triage** - High-risk areas identified in 5 minutes vs 2 days of manual review
+- **Zero manual exploit research** - 50K+ Solodit patterns auto-matched against codebase
+- **PoC scaffolds** - Attack path templates save 1-2 hours per finding verification
 
 **For Protocols:**
-- **$30K average savings** - Reduced senior auditor hours
-- **Faster iteration** - Pre-audit self-assessment
-- **Educational** - Learn from historical exploits
-
-**This is not a replacement for audits.** Aegis-3 just accelerates the process. Findings still require human verification.
+- **$30K average savings** - Reduced senior auditor hours on initial review phases
+- **Faster iteration** - Pre-audit self-assessment identifies low-hanging fruit
+- **Educational** - Learn from 69,641 historical exploits with references to original reports
 
 ---
 
 ## Technical Highlights
 
 - **AI:** Gemini 3 Pro/Flash (two-phase pipeline)
-- **Context:** 800K+ tokens per audit (full codebase analysis)
-- **RAG:** Custom pattern-matching over 69,641 indexed findings (<10ms search)
+- **RAG:** Tag-based pattern matching over 69,641 Solodit findings (keyword + severity scoring, <10ms search)
 - **UI:** Tactical minimalist design (Monaco editor, resizable panels, real-time updates)
 - **Stack:** Next.js 16, React 19, Tailwind CSS 4
 
-**Detailed docs:** [See `/docs`](/docs)
+**Detailed docs:** [See `/docs`](/docs) for architecture, RAG implementation, and similarity scoring algorithms
+
+---
+
+## What Aegis-3 Does NOT Do
+
+- **Not a formal verifier** - Cannot prove mathematical correctness of invariants
+- **Not a replacement for manual audits** - Findings require expert validation before production use
+- **May miss novel attack vectors** - Limited by historical data; zero-day patterns with no analog may be missed
+- **Does not handle partial repos** - Requires full contract context; missing interfaces or external dependencies reduce accuracy
+- **PoCs are scaffolds, not guarantees** - Generated exploits encode attack paths and assumptions but may need refinement
+
+**Use Aegis-3 for:** Initial triage, historical pattern matching, and accelerating manual review workflows.
 
 ---
 
@@ -127,11 +140,9 @@ npm run dev
 
 | Metric | Value |
 |--------|-------|
-| **Indexed Findings** | 69,641 across 31 DeFi categories |
+| **Indexed Findings** | 69,641 Solodit reports across 31 DeFi categories |
 | **Analysis Time** | 2-4 minutes average |
 | **Context Window** | Up to 1M tokens (Gemini 3) |
-| **LoC** | ~2,500 (excluding data) |
-| **Build Time** | 12 seconds |
 
 ---
 
@@ -158,7 +169,7 @@ Comprehensive technical docs in `/docs`:
 
 **Gemini 3 Integration:**
 
-Aegis-3 uses Gemini 3 in a two-phase adversarial pipeline. Phase 1 (Flash) performs rapid architectural mapping of entire codebases, identifying contract types, key functions, and interaction patterns in 10-20 seconds. Phase 2 (Pro) conducts deep security analysis with historical context injection—we use semantic RAG to retrieve 15 relevant exploits from 69,641 indexed findings, then inject this into Gemini's 1M token context window alongside the full codebase. The model's deep reasoning capabilities enable cross-contract vulnerability detection and Foundry PoC generation. Unlike chat interfaces, we treat Gemini as a specialized reasoning engine: structured prompts enforce JSON output with severity classifications, line numbers, and attack path explanations. Automatic fallback from Pro to Flash handles quota limits gracefully. This approach transforms Gemini into a domain-specific security tool that "thinks like an auditor"—referencing historical patterns, reasoning about economic incentives, and generating executable exploits.
+Aegis-3 uses Gemini 3 in a two-phase pipeline: Phase 1 (Flash) performs architectural mapping in 10-20 seconds, identifying contract types and interaction patterns. Phase 2 (Pro) conducts adversarial security analysis with historical context injection—we retrieve 15 relevant Solodit exploits from 69,641 indexed findings via tag-based RAG, then inject this into Gemini's 1M token context alongside the full codebase. Structured prompts enforce JSON output with severity, line numbers, attack paths, and PoC scaffolds. Automatic fallback from Pro to Flash handles quota limits. This transforms Gemini into a domain-specific reasoning engine that cross-references historical patterns and reasons about economic attack vectors.
 
 ---
 
