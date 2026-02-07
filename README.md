@@ -4,7 +4,7 @@
 
 Built for the [Gemini 3 Hackathon](https://gemini3.devpost.com/) | Deadline: Feb 9, 2026
 
-[![Demo](https://img.shields.io/badge/Demo-Live-emerald)](https://aegis3.demo) [![Video](https://img.shields.io/badge/Video-3min-red)](https://youtube.com/demo)
+
 
 ---
 
@@ -55,7 +55,7 @@ Findings (Severity, Lines, Historical Refs, Foundry PoCs)
 
 ```bash
 # 1. Clone & install
-git clone https://github.com/yourusername/aegis
+git clone https://github.com/Victor-Okpukpan/aegis-3
 cd aegis && npm install
 
 # 2. Add API key
@@ -66,7 +66,7 @@ npm run dev
 # Open http://localhost:3000
 ```
 
-**Get Gemini API key:** https://ai.google.dev/gemini-api/docs/api-key (Free tier: 1,500 req/day)
+**Get Gemini API key:** https://ai.google.dev/gemini-api/docs/api-key
 
 ---
 
@@ -100,16 +100,16 @@ npm run dev
 ## Impact
 
 **For Security Researchers:**
-- ⚡ **60% faster initial audit** - Triage in 5 minutes vs 2 days
-- 📚 **Zero manual exploit research** - 50K patterns auto-matched
-- 🧪 **PoC generation** - Saves 1-2 hours per finding
+- **60% faster initial audit** - Triage in 5 minutes vs 2 days
+- **Zero manual exploit research** - 50K patterns auto-matched
+- **PoC generation** - Saves 1-2 hours per finding
 
 **For Protocols:**
-- 💰 **$30K average savings** - Reduced senior auditor hours
-- 🚀 **Faster iteration** - Pre-audit self-assessment
-- 📖 **Educational** - Learn from historical exploits
+- **$30K average savings** - Reduced senior auditor hours
+- **Faster iteration** - Pre-audit self-assessment
+- **Educational** - Learn from historical exploits
 
-**Not a replacement for audits.** Aegis-3 accelerates the process—findings still require human verification.
+**This is not a replacement for audits.** Aegis-3 just accelerates the process. Findings still require human verification.
 
 ---
 
@@ -121,7 +121,7 @@ npm run dev
 - **UI:** Tactical minimalist design (Monaco editor, resizable panels, real-time updates)
 - **Stack:** Next.js 16, React 19, Tailwind CSS 4
 
-**Detailed docs:** [See `/docs`](/docs) for architecture, API specs, and innovation deep-dive
+**Detailed docs:** [See `/docs`](/docs)
 
 ---
 
@@ -139,10 +139,9 @@ npm run dev
 
 ## Submission Links
 
-- **Live Demo:** https://aegis3.vercel.app
-- **Video (3 min):** https://youtube.com/watch?v=demo
-- **Code:** https://github.com/yourusername/aegis
-- **Architecture:** [docs/ARCHITECTURE.md](/docs/ARCHITECTURE.md)
+- **Live Demo:** 
+- **Video (3 min):** 
+- **Code:** https://github.com/Victor-Okpukpan/aegis-3
 
 ---
 
@@ -159,7 +158,7 @@ Comprehensive technical docs in `/docs`:
 
 ## Hackathon Compliance
 
-**Gemini 3 Integration (~200 words):**
+**Gemini 3 Integration:**
 
 Aegis-3 uses Gemini 3 in a two-phase adversarial pipeline. Phase 1 (Flash) performs rapid architectural mapping of entire codebases, identifying contract types, key functions, and interaction patterns in 10-20 seconds. Phase 2 (Pro) conducts deep security analysis with historical context injection—we use semantic RAG to retrieve 15 relevant exploits from 69,641 indexed findings, then inject this into Gemini's 1M token context window alongside the full codebase. The model's deep reasoning capabilities enable cross-contract vulnerability detection and Foundry PoC generation. Unlike chat interfaces, we treat Gemini as a specialized reasoning engine: structured prompts enforce JSON output with severity classifications, line numbers, and attack path explanations. Automatic fallback from Pro to Flash handles quota limits gracefully. This approach transforms Gemini into a domain-specific security tool that "thinks like an auditor"—referencing historical patterns, reasoning about economic incentives, and generating executable exploits.
 
@@ -167,10 +166,4 @@ Aegis-3 uses Gemini 3 in a two-phase adversarial pipeline. Phase 1 (Flash) perfo
 
 ## License
 
-MIT - See [LICENSE](LICENSE)
-
----
-
-**Built with Gemini 3 for the Web3 security community**
-
-[Report Issues](https://github.com/yourusername/aegis/issues) • [Contact](mailto:your@email.com)
+MIT
