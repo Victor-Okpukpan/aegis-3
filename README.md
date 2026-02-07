@@ -1,8 +1,8 @@
 # Aegis-3: Adversarial Smart Contract Auditor
 
-> **AI-powered security analysis that thinks like an auditor, not a chatbot.**
+**AI-powered security analysis that thinks like an auditor.**
 
-Built for the [Gemini 3 Hackathon](https://gemini3.devpost.com/) | Deadline: Feb 9, 2026
+Built for the [Gemini 3 Hackathon](https://gemini3.devpost.com/)
 
 
 
@@ -65,8 +65,6 @@ echo "GEMINI_API_KEY=your_key_here" > .env
 npm run dev
 # Open http://localhost:3000
 ```
-
-**Get Gemini API key:** https://ai.google.dev/gemini-api/docs/api-key
 
 ---
 
