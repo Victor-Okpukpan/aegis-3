@@ -19,7 +19,9 @@ export default function AuditDetailPage() {
   const [loading, setLoading] = useState(true);
   const [selectedFinding, setSelectedFinding] = useState<number>(0);
   const [copiedPoc, setCopiedPoc] = useState<string | null>(null);
+  const [timeoutWarning, setTimeoutWarning] = useState(false);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const analyzeStartTime = useRef<number | null>(null);
   
   // Resizable panel state
   const [detailPanelHeight, setDetailPanelHeight] = useState(50); // percentage
@@ -60,12 +62,16 @@ export default function AuditDetailPage() {
         clearInterval(intervalRef.current);
         intervalRef.current = null;
       }
+      analyzeStartTime.current = null;
+      setTimeoutWarning(false);
       toast.success(`Analysis Complete\n${audit.findings.length} finding${audit.findings.length !== 1 ? 's' : ''} detected`);
     } else if (audit?.status === 'failed') {
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
         intervalRef.current = null;
       }
+      analyzeStartTime.current = null;
+      setTimeoutWarning(false);
       
       // Show simplified error toast
       const errorMsg = audit.system_map?.replace('Error: ', '') || 'Analysis failed';
@@ -74,8 +80,23 @@ export default function AuditDetailPage() {
       } else {
         toast.error(`Analysis Failed\n${errorMsg.slice(0, 100)}`, { duration: 6000 });
       }
+    } else if (audit?.status === 'analyzing') {
+      // Track when analyzing started
+      if (!analyzeStartTime.current) {
+        analyzeStartTime.current = Date.now();
+      }
+      
+      // Check for timeout (15 seconds - typical Vercel Hobby limit + buffer)
+      const elapsed = Date.now() - analyzeStartTime.current;
+      if (elapsed > 15000 && !timeoutWarning) {
+        setTimeoutWarning(true);
+        toast.error(
+          'Analysis Taking Longer Than Expected\n\nLikely cause: Vercel Hobby plan (10s timeout).\nSolution: Upgrade to Pro or try a smaller repo.',
+          { duration: 10000 }
+        );
+      }
     }
-  }, [audit?.status]);
+  }, [audit?.status, timeoutWarning]);
 
   async function fetchAudit() {
     try {
@@ -217,6 +238,32 @@ export default function AuditDetailPage() {
               <div className="console-log-success animate-pulse">
                 [AI] {audit.status === 'pending' ? 'Preparing analysis...' : 'Analyzing contracts...'}
               </div>
+              
+              {timeoutWarning && (
+                <div className="mt-4 p-4 border border-yellow-500/30 bg-yellow-500/5">
+                  <div className="text-xs text-yellow-400 uppercase tracking-wider mb-2 flex items-center gap-2">
+                    <AlertTriangle className="w-3 h-3" />
+                    Timeout Detected
+                  </div>
+                  <div className="text-sm text-slate-300 mb-3">
+                    Analysis is taking longer than expected (&gt;15s). This likely means:
+                  </div>
+                  <ul className="text-xs text-slate-400 space-y-1 mb-3 list-disc list-inside">
+                    <li>Vercel Hobby plan has 10-second function timeout</li>
+                    <li>Large repositories exceed this limit</li>
+                    <li>The serverless function was terminated mid-analysis</li>
+                  </ul>
+                  <div className="text-xs text-emerald-400 font-bold">
+                    Solutions:
+                  </div>
+                  <ul className="text-xs text-slate-400 space-y-1 list-disc list-inside">
+                    <li>Upgrade to Vercel Pro (60s timeout)</li>
+                    <li>Test with smaller repositories</li>
+                    <li>Use localhost for large audits</li>
+                  </ul>
+                </div>
+              )}
+              
               {audit.system_map && !audit.system_map.startsWith('Error:') && (
                 <div className="mt-4 p-3 border border-slate-800 bg-black">
                   <div className="text-xs text-slate-500 uppercase tracking-wider mb-2">

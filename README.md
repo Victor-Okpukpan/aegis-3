@@ -142,6 +142,7 @@ vercel --prod
 - **May miss novel attack vectors** - Limited by historical data; zero-day patterns with no analog may be missed
 - **Does not handle partial repos** - Requires full contract context; missing interfaces or external dependencies reduce accuracy
 - **PoCs are scaffolds, not guarantees** - Generated exploits encode attack paths and assumptions but may need refinement
+- **Vercel timeout limits** - Hobby plan (10s) handles small repos only; large repos require Pro (60s) or localhost
 
 **Use Aegis-3 for:** Initial triage, historical pattern matching, and accelerating manual review workflows.
 

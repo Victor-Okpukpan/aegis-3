@@ -111,10 +111,20 @@ The code automatically detects the environment:
 
 ### Vercel function timeout (10s/60s)
 **Cause:** Very large repositories exceed serverless function timeout  
+
+**Timeout Limits:**
+- **Hobby plan:** 10 seconds max
+- **Pro plan:** 60 seconds max
+
+**Typical audit times:**
+- Small repos (5-10 contracts): 5-10 seconds ✅ Hobby
+- Medium repos (20-50 contracts): 15-40 seconds ⚠️ Requires Pro
+- Large repos (100+ contracts): 60-120+ seconds ❌ Exceeds Pro
+
 **Fix:** 
-- Upgrade to Vercel Pro (60s timeout)
-- Or deploy to Railway/Render (no timeout limits)
-- Or implement async job processing
+- **Best:** Upgrade to Vercel Pro ($20/month) - handles most repos
+- **Alternative:** Deploy to Railway/Render (no timeout limits)
+- **For large repos:** Use localhost (`npm run dev`)
 
 ---
 
