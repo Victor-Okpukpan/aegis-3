@@ -101,13 +101,23 @@ export default function AuditDetailPage() {
   async function fetchAudit() {
     try {
       const res = await fetch(`/api/audits?id=${auditId}`);
-      if (!res.ok) throw new Error('Audit not found');
+      if (!res.ok) {
+        // During polling, audit might not be saved yet - this is expected
+        // Only log if it's been a while (loading is false means we've been trying)
+        if (!loading) {
+          console.warn('Audit not found (still processing)');
+        }
+        return;
+      }
       
       const data = await res.json();
       setAudit(data);
       setLoading(false);
     } catch (error) {
-      console.error('Failed to fetch audit:', error);
+      // Network errors or JSON parse errors - log but don't show to user
+      if (!loading) {
+        console.error('Failed to fetch audit:', error);
+      }
       setLoading(false);
     }
   }
@@ -235,9 +245,25 @@ export default function AuditDetailPage() {
 
           {audit.status === 'analyzing' || audit.status === 'pending' ? (
             <div className="p-4">
-              <div className="console-log-success animate-pulse">
-                [AI] {audit.status === 'pending' ? 'Preparing analysis...' : 'Analyzing contracts...'}
-              </div>
+              {/* Live Progress Log */}
+              {audit.progress_log && audit.progress_log.length > 0 ? (
+                <div className="space-y-2 mb-4">
+                  {audit.progress_log.map((log, idx) => (
+                    <div
+                      key={idx}
+                      className={`console-log text-xs ${
+                        idx === audit.progress_log!.length - 1 ? 'animate-pulse text-emerald-400' : 'text-slate-500'
+                      }`}
+                    >
+                      {log}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="console-log-success animate-pulse">
+                  [AI] {audit.status === 'pending' ? 'Preparing analysis...' : 'Analyzing contracts...'}
+                </div>
+              )}
               
               {timeoutWarning && (
                 <div className="mt-4 p-4 border border-yellow-500/30 bg-yellow-500/5">
@@ -261,18 +287,6 @@ export default function AuditDetailPage() {
                     <li>Test with smaller repositories</li>
                     <li>Use localhost for large audits</li>
                   </ul>
-                </div>
-              )}
-              
-              {audit.system_map && !audit.system_map.startsWith('Error:') && (
-                <div className="mt-4 p-3 border border-slate-800 bg-black">
-                  <div className="text-xs text-slate-500 uppercase tracking-wider mb-2">
-                    System Map
-                  </div>
-                  <pre className="text-xs text-slate-400 whitespace-pre-wrap font-mono">
-                    {audit.system_map.slice(0, 500)}
-                    {audit.system_map.length > 500 && '...'}
-                  </pre>
                 </div>
               )}
             </div>

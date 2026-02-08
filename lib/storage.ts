@@ -127,3 +127,20 @@ export async function updateAuditStatus(
 
   await saveAudit(audit);
 }
+
+/**
+ * Add a progress log entry to an audit
+ */
+export async function addProgressLog(id: string, message: string): Promise<void> {
+  const audit = await getAudit(id);
+  if (!audit) return;
+
+  if (!audit.progress_log) {
+    audit.progress_log = [];
+  }
+  
+  const timestamp = new Date().toISOString().split('T')[1].split('.')[0]; // HH:MM:SS
+  audit.progress_log.push(`[${timestamp}] ${message}`);
+  
+  await saveAudit(audit);
+}

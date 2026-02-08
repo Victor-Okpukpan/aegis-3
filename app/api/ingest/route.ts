@@ -50,17 +50,19 @@ export async function POST(req: NextRequest) {
  * Background processing of repository
  */
 async function processRepository(auditId: string, repoUrl: string) {
-  const { updateAuditStatus } = await import('@/lib/storage');
+  const { updateAuditStatus, addProgressLog } = await import('@/lib/storage');
   const { cleanupRepository } = await import('@/lib/github');
   
   let repoId: string | null = null;
 
   try {
     // Clone repository
+    await addProgressLog(auditId, '🔍 Fetching repository from GitHub...');
     const { id, path: repoPath } = await cloneRepository(repoUrl);
     repoId = id;
 
     // Flatten Solidity code
+    await addProgressLog(auditId, '📄 Extracting Solidity contracts...');
     const { code, files } = await flattenSolidityCode(repoPath);
     
     // Create file contents map
@@ -68,6 +70,8 @@ async function processRepository(auditId: string, repoUrl: string) {
     files.forEach(file => {
       fileContents[file.path] = file.content;
     });
+
+    await addProgressLog(auditId, `✅ Found ${files.length} Solidity files (${code.length} chars)`);
 
     // Update status to analyzing and store flattened code + files
     await updateAuditStatus(auditId, 'analyzing', {
@@ -87,6 +91,7 @@ async function processRepository(auditId: string, repoUrl: string) {
   } catch (error: any) {
     console.error(`[AUDIT ${auditId}] Processing error:`, error);
     try {
+      await addProgressLog(auditId, `❌ Error: ${error?.message || 'Processing failed'}`);
       await updateAuditStatus(auditId, 'failed', {
         system_map: `Error: ${error?.message || 'Processing failed'}`,
       });
@@ -108,7 +113,7 @@ async function processRepository(auditId: string, repoUrl: string) {
  * Perform AI analysis on the ingested repository
  */
 async function performAIAnalysis(auditId: string) {
-  const { updateAuditStatus } = await import('@/lib/storage');
+  const { updateAuditStatus, addProgressLog } = await import('@/lib/storage');
   
   try {
     // Get the audit record
@@ -122,18 +127,22 @@ async function performAIAnalysis(auditId: string) {
     
     // Step 1: Generate Architecture System Map
     console.log(`[ANALYZE ${auditId}] Generating system map...`);
+    await addProgressLog(auditId, '🧠 [AI] Generating architecture system map...');
     const systemMap = await generateSystemMap(code);
 
     await updateAuditStatus(auditId, 'analyzing', {
       system_map: JSON.stringify(systemMap, null, 2),
     });
+    await addProgressLog(auditId, '✅ [AI] System map complete');
 
     // Step 2: Extract vulnerability patterns and search historical findings
     console.log(`[ANALYZE ${auditId}] Searching historical patterns...`);
+    await addProgressLog(auditId, '🔎 [RAG] Searching 69,641 historical findings...');
     const patterns = extractVulnerabilityPatterns(code);
     const keywords = generateSearchKeywords(code, systemMap);
     
     const relevantFindings = await searchRelevantFindings(keywords, patterns, 15);
+    await addProgressLog(auditId, `✅ [RAG] Found ${relevantFindings.length} relevant patterns`);
     
     // Build historical context for Gemini
     const historicalContext = relevantFindings
@@ -149,6 +158,7 @@ Tags: ${f.tags.join(', ')}
 
     // Step 3: Perform adversarial audit with Gemini 3
     console.log(`[ANALYZE ${auditId}] Performing adversarial audit...`);
+    await addProgressLog(auditId, '⚔️ [AI] Performing adversarial audit...');
     const findings = await performAdversarialAudit(
       code,
       systemMap,
@@ -156,6 +166,7 @@ Tags: ${f.tags.join(', ')}
     );
 
     // Step 4: Save results
+    await addProgressLog(auditId, `✅ Analysis complete! Found ${findings.length} findings`);
     await updateAuditStatus(auditId, 'completed', {
       findings,
     });
@@ -180,6 +191,7 @@ Tags: ${f.tags.join(', ')}
       userMessage = fullError;
     }
     
+    await addProgressLog(auditId, `❌ Analysis failed: ${userMessage}`);
     await updateAuditStatus(auditId, 'failed', {
       system_map: `Error: ${userMessage}`,
     });

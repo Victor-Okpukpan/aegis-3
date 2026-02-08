@@ -47,6 +47,7 @@ export interface AuditResult {
   status: "pending" | "analyzing" | "completed" | "failed";
   files?: Record<string, string>; // Map of file paths to their contents
   flattened_code?: string; // Flattened Solidity code for analysis
+  progress_log?: string[]; // Live progress updates during analysis
 }
 
 export interface ArchitectureMap {
