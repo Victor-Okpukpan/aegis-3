@@ -1,11 +1,22 @@
 import fs from 'fs/promises';
 import path from 'path';
 import { AuditResult } from './types';
-import { kv } from '@vercel/kv';
+import { createClient } from 'redis';
+import type { RedisClientType } from 'redis';
 
-// Use Redis/KV on production (detects REDIS_URL, KV_URL, or KV_REST_API_URL), filesystem locally
-const USE_KV = !!(process.env.REDIS_URL || process.env.KV_URL || process.env.KV_REST_API_URL);
+// Use Redis on production (detects REDIS_URL), filesystem locally
+const USE_REDIS = !!process.env.REDIS_URL;
 const AUDITS_DIR = path.join(process.cwd(), '.temp', 'audits');
+
+// Redis client (lazy initialization)
+let redis: RedisClientType | null = null;
+async function getRedis(): Promise<RedisClientType> {
+  if (!redis && process.env.REDIS_URL) {
+    redis = createClient({ url: process.env.REDIS_URL });
+    await redis.connect();
+  }
+  return redis!;
+}
 
 /**
  * Initialize audits storage directory
@@ -18,11 +29,12 @@ async function ensureAuditsDir() {
  * Save audit result to storage
  */
 export async function saveAudit(audit: AuditResult): Promise<void> {
-  if (USE_KV) {
-    // Store in Vercel KV (Redis)
-    await kv.set(`audit:${audit.id}`, audit);
-    // Also add to list of all audits
-    await kv.zadd('audits:list', { score: Date.now(), member: audit.id });
+  if (USE_REDIS) {
+    // Store in Redis (Upstash)
+    const client = await getRedis();
+    await client.set(`audit:${audit.id}`, JSON.stringify(audit));
+    // Also add to sorted set of all audits (by timestamp)
+    await client.zAdd('audits:list', { score: Date.now(), value: audit.id });
   } else {
     // Fallback to filesystem for local development
     await ensureAuditsDir();
@@ -36,10 +48,11 @@ export async function saveAudit(audit: AuditResult): Promise<void> {
  */
 export async function getAudit(id: string): Promise<AuditResult | null> {
   try {
-    if (USE_KV) {
-      // Retrieve from Vercel KV
-      const audit = await kv.get<AuditResult>(`audit:${id}`);
-      return audit;
+    if (USE_REDIS) {
+      // Retrieve from Redis
+      const client = await getRedis();
+      const data = await client.get(`audit:${id}`);
+      return data ? JSON.parse(data) : null;
     } else {
       // Fallback to filesystem
       const filePath = path.join(AUDITS_DIR, `${id}.json`);
@@ -56,14 +69,17 @@ export async function getAudit(id: string): Promise<AuditResult | null> {
  */
 export async function getAllAudits(): Promise<AuditResult[]> {
   try {
-    if (USE_KV) {
+    if (USE_REDIS) {
       // Get audit IDs from sorted set (newest first)
-      const auditIds = await kv.zrange<string[]>('audits:list', 0, -1, { rev: true });
+      const client = await getRedis();
+      const auditIds = await client.zRange('audits:list', 0, -1, { REV: true });
       const audits: AuditResult[] = [];
       
       for (const id of auditIds) {
-        const audit = await kv.get<AuditResult>(`audit:${id}`);
-        if (audit) audits.push(audit);
+        const data = await client.get(`audit:${id}`);
+        if (data) {
+          audits.push(JSON.parse(data));
+        }
       }
       
       return audits;
