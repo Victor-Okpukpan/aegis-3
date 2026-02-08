@@ -59,11 +59,19 @@ async function processRepository(auditId: string, repoUrl: string) {
     repoId = id;
 
     // Flatten Solidity code
-    const { code } = await flattenSolidityCode(repoPath);
+    const { code, files } = await flattenSolidityCode(repoPath);
+    
+    // Create file contents map
+    const fileContents: Record<string, string> = {};
+    files.forEach(file => {
+      fileContents[file.path] = file.content;
+    });
 
-    // Update status to analyzing
+    // Update status to analyzing and store flattened code + files
     await updateAuditStatus(auditId, 'analyzing', {
       system_map: `Repository cloned successfully. ${code.length} characters of Solidity code extracted.`,
+      flattened_code: code,
+      files: fileContents,
     });
 
     // Cleanup

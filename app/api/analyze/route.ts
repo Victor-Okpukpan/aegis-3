@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getAudit, updateAuditStatus, saveAudit } from '@/lib/storage';
-import { cloneRepository, flattenSolidityCode, cleanupRepository } from '@/lib/github';
+import { getAudit, updateAuditStatus } from '@/lib/storage';
 import { generateSystemMap, performAdversarialAudit } from '@/lib/gemini';
 import { searchRelevantFindings, extractVulnerabilityPatterns, generateSearchKeywords } from '@/lib/reports';
 
@@ -32,15 +31,23 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    if (audit.status !== 'pending') {
+    if (audit.status !== 'analyzing') {
       return NextResponse.json(
-        { error: 'Audit already processed or in progress' },
+        { error: 'Audit not ready for analysis. Must be in "analyzing" state.' },
+        { status: 400 }
+      );
+    }
+
+    // Verify flattened code is available
+    if (!audit.flattened_code) {
+      return NextResponse.json(
+        { error: 'Flattened code not found. Repository ingestion may have failed.' },
         { status: 400 }
       );
     }
 
     // Start analysis (async)
-    performAnalysis(audit_id, audit.repo_url).catch(error => {
+    performAnalysis(audit_id, audit.flattened_code, audit.files || {}).catch(error => {
       console.error(`[ANALYZE ${audit_id}] Failed:`, error);
     });
 
@@ -57,26 +64,11 @@ export async function POST(req: NextRequest) {
 /**
  * Background analysis processing
  */
-async function performAnalysis(auditId: string, repoUrl: string) {
-  let repoId: string | null = null;
-
+async function performAnalysis(auditId: string, code: string, fileContents: Record<string, string>) {
   try {
     await updateAuditStatus(auditId, 'analyzing');
-
-    // Step 1: Clone and flatten repository
-    console.log(`[ANALYZE ${auditId}] Cloning repository...`);
-    const { id, path: repoPath } = await cloneRepository(repoUrl);
-    repoId = id;
-
-    const { code, files } = await flattenSolidityCode(repoPath);
     
-    // Create a map of file paths to contents for later display
-    const fileContents: Record<string, string> = {};
-    files.forEach(file => {
-      fileContents[file.path] = file.content;
-    });
-    
-    // Step 2: Generate Architecture System Map
+    // Step 1: Generate Architecture System Map
     console.log(`[ANALYZE ${auditId}] Generating system map...`);
     const systemMap = await generateSystemMap(code);
 
@@ -84,7 +76,7 @@ async function performAnalysis(auditId: string, repoUrl: string) {
       system_map: JSON.stringify(systemMap, null, 2),
     });
 
-    // Step 3: Extract vulnerability patterns and search historical findings
+    // Step 2: Extract vulnerability patterns and search historical findings
     console.log(`[ANALYZE ${auditId}] Searching historical patterns...`);
     const patterns = extractVulnerabilityPatterns(code);
     const keywords = generateSearchKeywords(code, systemMap);
@@ -103,7 +95,7 @@ Tags: ${f.tags.join(', ')}
       `)
       .join('\n');
 
-    // Step 4: Perform adversarial audit with Gemini 3
+    // Step 3: Perform adversarial audit with Gemini 3
     console.log(`[ANALYZE ${auditId}] Performing adversarial audit...`);
     const findings = await performAdversarialAudit(
       code,
@@ -111,18 +103,12 @@ Tags: ${f.tags.join(', ')}
       historicalContext
     );
 
-    // Step 5: Save results (including file contents for display)
+    // Step 4: Save results (file contents already stored from ingest step)
     await updateAuditStatus(auditId, 'completed', {
       findings,
-      files: fileContents,
     });
 
     console.log(`[ANALYZE ${auditId}] Analysis complete. Found ${findings.length} issues.`);
-
-    // Cleanup
-    if (repoId) {
-      await cleanupRepository(repoId);
-    }
   } catch (error: any) {
     console.error(`[ANALYZE ${auditId}] Analysis error:`, error);
     
@@ -146,9 +132,5 @@ Tags: ${f.tags.join(', ')}
     await updateAuditStatus(auditId, 'failed', {
       system_map: `Error: ${userMessage}`,
     });
-    
-    if (repoId) {
-      await cleanupRepository(repoId);
-    }
   }
 }

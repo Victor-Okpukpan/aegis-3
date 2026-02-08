@@ -22,7 +22,7 @@
     background-size: 24px 24px;
     pointer-events: none;
     z-index: -1;
-  }
+}
 
   /* Remove all border radius */
   button,
@@ -141,7 +141,7 @@
 
 .status-failed {
   @apply inline-block w-2 h-2 border border-current bg-red-500 border-red-400;
-}
+  }
 
 .tactical-divider {
   @apply border-t border-slate-800 my-6;
