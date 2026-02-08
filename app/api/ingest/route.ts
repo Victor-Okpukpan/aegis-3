@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { nanoid } from 'nanoid';
 import { cloneRepository, flattenSolidityCode, isValidGitHubUrl } from '@/lib/github';
-import { saveAudit } from '@/lib/storage';
+import { saveAudit, getAudit } from '@/lib/storage';
 import { AuditResult } from '@/lib/types';
+import { generateSystemMap, performAdversarialAudit } from '@/lib/gemini';
+import { searchRelevantFindings, extractVulnerabilityPatterns, generateSearchKeywords } from '@/lib/reports';
 
 export async function POST(req: NextRequest) {
   try {
@@ -76,6 +78,12 @@ async function processRepository(auditId: string, repoUrl: string) {
 
     // Cleanup
     await cleanupRepository(repoId);
+    
+    // Trigger analysis automatically
+    console.log(`[AUDIT ${auditId}] Starting AI analysis...`);
+    performAIAnalysis(auditId).catch(error => {
+      console.error(`[AUDIT ${auditId}] AI analysis failed:`, error);
+    });
   } catch (error: any) {
     console.error(`[AUDIT ${auditId}] Processing error:`, error);
     try {
@@ -93,5 +101,87 @@ async function processRepository(auditId: string, repoUrl: string) {
         console.error(`[AUDIT ${auditId}] Cleanup error:`, cleanupError);
       }
     }
+  }
+}
+
+/**
+ * Perform AI analysis on the ingested repository
+ */
+async function performAIAnalysis(auditId: string) {
+  const { updateAuditStatus } = await import('@/lib/storage');
+  
+  try {
+    // Get the audit record
+    const audit = await getAudit(auditId);
+    if (!audit || !audit.flattened_code) {
+      throw new Error('Audit or flattened code not found');
+    }
+
+    const code = audit.flattened_code;
+    const fileContents = audit.files || {};
+    
+    // Step 1: Generate Architecture System Map
+    console.log(`[ANALYZE ${auditId}] Generating system map...`);
+    const systemMap = await generateSystemMap(code);
+
+    await updateAuditStatus(auditId, 'analyzing', {
+      system_map: JSON.stringify(systemMap, null, 2),
+    });
+
+    // Step 2: Extract vulnerability patterns and search historical findings
+    console.log(`[ANALYZE ${auditId}] Searching historical patterns...`);
+    const patterns = extractVulnerabilityPatterns(code);
+    const keywords = generateSearchKeywords(code, systemMap);
+    
+    const relevantFindings = await searchRelevantFindings(keywords, patterns, 15);
+    
+    // Build historical context for Gemini
+    const historicalContext = relevantFindings
+      .map(f => `
+[${f.impact}] ${f.title}
+Protocol: ${f.protocol_name}
+Source: ${f.source_link}
+Description: ${f.content.slice(0, 500)}
+Tags: ${f.tags.join(', ')}
+---
+      `)
+      .join('\n');
+
+    // Step 3: Perform adversarial audit with Gemini 3
+    console.log(`[ANALYZE ${auditId}] Performing adversarial audit...`);
+    const findings = await performAdversarialAudit(
+      code,
+      systemMap,
+      historicalContext
+    );
+
+    // Step 4: Save results
+    await updateAuditStatus(auditId, 'completed', {
+      findings,
+    });
+
+    console.log(`[ANALYZE ${auditId}] Analysis complete. Found ${findings.length} issues.`);
+  } catch (error: any) {
+    console.error(`[ANALYZE ${auditId}] Analysis error:`, error);
+    
+    // Simplify error message for display
+    let userMessage = 'Unknown error occurred';
+    const fullError = error?.message || '';
+    
+    if (fullError.includes('quota') || fullError.includes('429')) {
+      userMessage = 'API quota exceeded. Your Gemini API free tier limit has been reached. Please wait for quota reset or upgrade your plan.';
+    } else if (fullError.includes('ENOENT') || fullError.includes('no such file')) {
+      userMessage = 'Repository processing failed. The files could not be accessed.';
+    } else if (fullError.includes('network') || fullError.includes('ECONNREFUSED')) {
+      userMessage = 'Network error. Could not connect to Gemini API.';
+    } else if (fullError.length > 200) {
+      userMessage = fullError.slice(0, 200) + '...';
+    } else {
+      userMessage = fullError;
+    }
+    
+    await updateAuditStatus(auditId, 'failed', {
+      system_map: `Error: ${userMessage}`,
+    });
   }
 }

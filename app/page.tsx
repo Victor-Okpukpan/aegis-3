@@ -62,25 +62,10 @@ export default function HomePage() {
 
       const { audit_id } = await ingestRes.json();
       addLog(`[STATUS] Audit ID: ${audit_id}`);
-      addLog('[STATUS] Repository queued for analysis...');
-      toast.success('Repository ingested successfully');
-
-      // Step 2: Start analysis
-      addLog('[AI] Initiating Gemini 3 analysis...');
-      
-      const analyzeRes = await fetch('/api/analyze', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ audit_id }),
-      });
-
-      if (!analyzeRes.ok) {
-        throw new Error('Analysis initialization failed');
-      }
-
-      addLog('[STATUS] Analysis started in background...');
+      addLog('[STATUS] Repository ingested successfully');
+      addLog('[AI] AI analysis started automatically...');
       addLog('[SYSTEM] Redirecting to audit dashboard...');
-      toast.success('Analysis started - redirecting...', { duration: 2000 });
+      toast.success('Audit started - redirecting...', { duration: 2000 });
 
       // Redirect to audit page
       setTimeout(() => {
