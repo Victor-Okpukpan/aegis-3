@@ -290,13 +290,34 @@ export default function AuditDetailPage() {
                   <div className="text-sm text-slate-300 mb-4 break-words whitespace-pre-wrap">
                     {audit.system_map.replace('Error: ', '')}
                   </div>
+                  
+                  {/* Show specific fix for network errors */}
+                  {audit.system_map.includes('fetch failed') && (
+                    <div className="mt-3 p-3 border border-yellow-500/30 bg-yellow-500/5">
+                      <div className="text-xs text-yellow-400 uppercase tracking-wider mb-2">
+                        Network Connectivity Issue
+                      </div>
+                      <div className="text-xs text-slate-400 space-y-1">
+                        <p>This error typically occurs on <strong>WSL2/localhost</strong> when the Gemini API is unreachable.</p>
+                        <p className="mt-2 text-emerald-400 font-bold">Solutions:</p>
+                        <ul className="list-disc list-inside mt-1 space-y-1">
+                          <li>Restart WSL2 networking: <code className="text-xs bg-black px-1 py-0.5">wsl --shutdown</code> (in Windows PowerShell)</li>
+                          <li>Check if VPN/firewall is blocking API calls</li>
+                          <li>Test on Vercel deployment (has full internet access)</li>
+                        </ul>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
               <button
-                onClick={() => window.location.reload()}
+                onClick={() => {
+                  toast.loading('Redirecting to dashboard...', { duration: 1000 });
+                  setTimeout(() => router.push('/'), 1000);
+                }}
                 className="tactical-button-primary mt-4"
               >
-                Retry Analysis
+                Return to Dashboard
               </button>
             </div>
           ) : audit.findings.length === 0 ? (
