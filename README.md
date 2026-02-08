@@ -1,55 +1,41 @@
 # Aegis-3: Adversarial Smart Contract Auditor
 
-**AI-powered security analysis that thinks like an auditor.**
+**Protocol-level security triage using historical exploit reasoning.**
+
+> DeFi lost $3.8B in 2024 to cross-contract logic flaws that static analyzers missed. Aegis-3 bridges the gap between such analyzers (e.g Slither) and manual audits.
+
+Aegis-3 analyzes entire smart contract systems by mapping architecture, cross-contract interactions, and trust boundaries, then matching them against **69,641 real-world Solodit exploit reports**.
+
+Built for auditors and protocol teams who need to identify **high-risk attack paths early**, before committing to a full manual audit. It is designed for early-stage risk identification, not final audit sign-off.
+
+**What it does:**
+- Analyzes full repositories using Gemini 3's 1M-token context
+- Detects cross-contract and economic attack patterns static tools miss
+- Matches findings to historical exploits using deterministic, tag-based RAG
+- Generates Foundry PoC scaffolds to accelerate human verification
+
+**What it is NOT:**
+- Not a formal verifier
+- Not a replacement for manual audits
+- Not guaranteed to catch novel, zero-history exploits
 
 Built for the [Gemini 3 Hackathon](https://gemini3.devpost.com/)
 
-
-
 ---
 
-## The Problem
+## Technical Approach
 
-Static analyzers catch surface bugs. Manual audits catch logic flaws but take weeks. **Nothing bridges this gap at scale.**
-
-DeFi lost $3.8B in 2024 (Chainalysis) to vulnerabilities that tools like Slither missed:
-- Cross-contract logic flaws
-- Oracle manipulation vectors  
-- Economic attack paths
-- State corruption bugs
-
-**Example:** A "safe" Vault becomes vulnerable when paired with a manipulable Strategy contract. Static tools analyze contracts in isolation. They can't reason about this.
-
----
-
-## Our Solution
-
-**Aegis-3 is an adversarial reasoning engine** that combines:
-
-1. **Gemini 3's 1M token context** - Analyze entire protocols, not single files
-2. **50,000+ historical exploits** - Pattern-match against real attack vectors via semantic RAG
-3. **Foundry PoC scaffolds** - Attack path templates to accelerate exploit verification (require human validation)
-4. **Architectural mapping** - Understand cross-contract interactions and trust boundaries
-
-### Key Innovation
-
-We inject **69,641 indexed Solodit findings** (audit reports with severity tags, root causes, and affected code patterns) into Gemini 3's context, enabling it to reference real exploits: *"This oracle manipulation matches patterns from the Euler Finance exploit (March 2023). Here's a PoC scaffold."*
-
-**How similarity works:** Tag-based pattern matching scores findings by keyword overlap, severity alignment, and vulnerability category (e.g., "Oracle + Flash Loan + Price Manipulation"). Scores are deterministic, not embedding-based.
-
----
-
-## How It Works
+**Two-phase analysis pipeline:**
 
 ```
-GitHub Repo → Architecture Mapping (Flash) → RAG Search (50K+ patterns)
+GitHub Repo → Architecture Mapping (Flash) → RAG Search (69K+ patterns)
      ↓
 Historical Context + Full Codebase → Gemini 3 Pro (Deep Reasoning)
      ↓
-Findings (Severity, Lines, Historical Refs, Foundry PoCs)
+Findings (Severity, Lines, Historical Refs, PoC Scaffolds)
 ```
 
-**4-minute end-to-end:** Submit URL → View findings with highlighted code + executable exploits
+**How pattern matching works:** Tag-based scoring by keyword overlap, severity alignment, and vulnerability category (e.g., "Oracle + Flash Loan + Price Manipulation"). Deterministic, not embedding-based.
 
 ---
 
@@ -124,7 +110,7 @@ npm run dev
 
 ---
 
-## What Aegis-3 Does NOT Do
+## Limitations
 
 - **Not a formal verifier** - Cannot prove mathematical correctness of invariants
 - **Not a replacement for manual audits** - Findings require expert validation before production use
@@ -148,7 +134,7 @@ npm run dev
 
 ## Submission Links
 
-- **Live Demo:** 
+- **Live Demo:** [aegis-3.vercel.app](https://aegis-3.vercel.app/)
 - **Video (3 min):** 
 - **Code:** https://github.com/Victor-Okpukpan/aegis-3
 

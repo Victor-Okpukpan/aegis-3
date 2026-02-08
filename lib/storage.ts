@@ -2,7 +2,9 @@ import fs from 'fs/promises';
 import path from 'path';
 import { AuditResult } from './types';
 
-const AUDITS_DIR = path.join(process.cwd(), '.temp', 'audits');
+const AUDITS_DIR = process.env.VERCEL 
+  ? '/tmp/audits' 
+  : path.join(process.cwd(), '.temp', 'audits');
 
 /**
  * Initialize audits storage directory

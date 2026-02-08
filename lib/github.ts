@@ -3,7 +3,9 @@ import fs from 'fs/promises';
 import path from 'path';
 import { nanoid } from 'nanoid';
 
-const TEMP_DIR = path.join(process.cwd(), '.temp', 'repos');
+const TEMP_DIR = process.env.VERCEL 
+  ? '/tmp/repos' 
+  : path.join(process.cwd(), '.temp', 'repos');
 
 /**
  * Extract owner and repo name from GitHub URL
