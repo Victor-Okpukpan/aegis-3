@@ -2,6 +2,12 @@
 
 **Protocol-level security triage using historical exploit reasoning.**
 
+**Live Demo:** [aegis-3.vercel.app](https://aegis-3.vercel.app/) | **Video:** [3-min demo](#)
+
+Built for the [Gemini 3 Hackathon](https://gemini3.devpost.com/)
+
+---
+
 > DeFi lost $3.8B in 2024 to cross-contract logic flaws that static analyzers missed. Aegis-3 bridges the gap between such analyzers (e.g Slither) and manual audits.
 
 Aegis-3 analyzes entire smart contract systems by mapping architecture, cross-contract interactions, and trust boundaries, then matching them against **69,641 real-world Solodit exploit reports**.
@@ -19,7 +25,16 @@ Built for auditors and protocol teams who need to identify **high-risk attack pa
 - Not a replacement for manual audits
 - Not guaranteed to catch novel, zero-history exploits
 
-Built for the [Gemini 3 Hackathon](https://gemini3.devpost.com/)
+---
+
+## ⚠️ Deployment Recommendation: Run Locally
+
+**Aegis-3 must be run locally for proper functionality.** The Vercel demo exists for showcase purposes only - serverless platform limitations make it unsuitable for actual security audits on a free plan.
+
+**To audit real protocols, run locally:**
+- ✅ **No timeouts** - Full analysis of any repository size
+- ✅ **Complete functionality** - All features work as designed
+- ✅ **2-minute setup** - See Quick Start below
 
 ---
 
@@ -41,11 +56,16 @@ Findings (Severity, Lines, Historical Refs, PoC Scaffolds)
 
 ## Quick Start
 
-### Local Development
+**Prerequisites:**
+- Node.js 20+
+- Gemini API key ([get here](https://ai.google.dev/gemini-api/docs/api-key))
+- GitHub token (optional, for higher rate limits: [create here](https://github.com/settings/tokens/new) - no scopes needed)
+
 ```bash
 # 1. Clone & install
 git clone https://github.com/Victor-Okpukpan/aegis-3
-cd aegis && npm install
+cd aegis-3
+npm install
 
 # 2. Add API keys
 cat > .env << EOF
@@ -53,45 +73,31 @@ GEMINI_API_KEY=your_gemini_key_here
 GITHUB_TOKEN=your_github_token_here
 EOF
 
-# 3. Run
+# 3. Run locally
 npm run dev
 # Open http://localhost:3000
+
+# 4. Test with a repo
+# Paste: https://github.com/Aave/protocol-v2
+# Wait 2-3 minutes for analysis
 ```
 
-**Get API keys:**
-- **Gemini API**: https://ai.google.dev/gemini-api/docs/api-key
-- **GitHub Token**: https://github.com/settings/tokens/new (no scopes needed)
-
-### Vercel Deployment (Recommended)
-```bash
-# 1. Deploy to Vercel
-vercel --prod
-
-# 2. Add Redis storage (REQUIRED)
-# Dashboard → Storage → Create Upstash Redis → Link to project
-# Auto-creates REDIS_URL environment variable
-
-# 3. Add Gemini API key
-# Settings → Environment Variables → GEMINI_API_KEY
-```
-
-> **Full deployment guide:** See [VERCEL_SETUP.md](./VERCEL_SETUP.md) for step-by-step instructions
-> 
-> **Note:** Redis storage (via Upstash) is required for persistent storage on Vercel. Local dev uses filesystem automatically.
+**That's it!** No database setup, no deployment complexity. Just Node.js and API keys.
 
 ---
 
 ## Demo Workflow
 
-1. **Submit repo:** `https://github.com/Aave/protocol-v2`
-2. **Wait 2-3 minutes** (cloning + AI analysis)
-3. **Review findings:**
+1. **Run locally:** `npm run dev` → Open http://localhost:3000
+2. **Submit repo:** Paste `https://github.com/Aave/protocol-v2`
+3. **Wait 2-4 minutes** (GitHub API fetch + Gemini analysis)
+4. **Review findings:**
    - Split-screen: Findings list + Monaco code viewer
    - Red-highlighted vulnerable lines
    - Historical references with pattern match scores (e.g., "Matches Compound rounding error patterns")
    - Copy-paste Foundry PoC scaffold to verify locally
 
-**See it in action:** [3-minute demo video](https://youtube.com/demo)
+**See it in action:** [3-minute demo video](#) (coming soon)
 
 ---
 
@@ -142,9 +148,10 @@ vercel --prod
 - **May miss novel attack vectors** - Limited by historical data; zero-day patterns with no analog may be missed
 - **Does not handle partial repos** - Requires full contract context; missing interfaces or external dependencies reduce accuracy
 - **PoCs are scaffolds, not guarantees** - Generated exploits encode attack paths and assumptions but may need refinement
-- **Vercel timeout limits** - Hobby plan (10s) handles small repos only; large repos require Pro (60s) or localhost
+- **Serverless platforms have constraints** - Vercel impose 10-60s timeouts on a free plan. **Run locally for production use.**
 
-**Use Aegis-3 for:** Initial triage, historical pattern matching, and accelerating manual review workflows.
+**Use Aegis-3 for:** Initial triage, historical pattern matching, and accelerating manual review workflows.  
+**Best environment:** Local development (unlimited analysis time, handles any repo size)
 
 ---
 
@@ -153,16 +160,9 @@ vercel --prod
 | Metric | Value |
 |--------|-------|
 | **Indexed Findings** | 69,641 Solodit reports across 31 DeFi categories |
-| **Analysis Time** | 2-4 minutes average |
+| **Analysis Time** | 2-4 minutes average (local) |
 | **Context Window** | Up to 1M tokens (Gemini 3) |
-
----
-
-## Submission Links
-
-- **Live Demo:** [aegis-3.vercel.app](https://aegis-3.vercel.app/)
-- **Video (3 min):** 
-- **Code:** https://github.com/Victor-Okpukpan/aegis-3
+| **Deployment** | Local only (Vercel demo is showcase-only) |
 
 ---
 
@@ -171,9 +171,10 @@ vercel --prod
 Comprehensive technical docs in `/docs`:
 
 - **[Architecture Deep-Dive](/docs/ARCHITECTURE.md)** - RAG engine, Gemini pipeline, UI design
-- **[Setup Guide](/docs/SETUP.md)** - Local installation, production deployment
 - **[Innovation Thesis](/docs/INNOVATION.md)** - Why LLMs beat static analysis
 - **[API Reference](/docs/API.md)** - Endpoints, data models, examples
+
+All setup instructions are in this README - no additional configuration needed.
 
 ---
 
