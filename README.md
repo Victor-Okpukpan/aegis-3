@@ -47,13 +47,20 @@ Findings (Severity, Lines, Historical Refs, PoC Scaffolds)
 git clone https://github.com/Victor-Okpukpan/aegis-3
 cd aegis && npm install
 
-# 2. Add API key
-echo "GEMINI_API_KEY=your_key_here" > .env
+# 2. Add API keys
+cat > .env << EOF
+GEMINI_API_KEY=your_gemini_key_here
+GITHUB_TOKEN=your_github_token_here
+EOF
 
 # 3. Run
 npm run dev
 # Open http://localhost:3000
 ```
+
+**Get API keys:**
+- **Gemini API**: https://ai.google.dev/gemini-api/docs/api-key
+- **GitHub Token**: https://github.com/settings/tokens/new (no scopes needed)
 
 ### Vercel Deployment (Recommended)
 ```bash

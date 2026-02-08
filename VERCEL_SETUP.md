@@ -37,13 +37,25 @@ Aegis-3 requires persistent storage for audit results. Vercel serverless functio
 
 ---
 
-## Step 3: Add Gemini API Key
+## Step 3: Add Environment Variables
 
 1. Go to **Settings → Environment Variables**
-2. Add new variable:
+2. Add these variables:
+
+   **A. Gemini API Key (REQUIRED)**
    - **Name:** `GEMINI_API_KEY`
    - **Value:** Your Gemini API key from https://ai.google.dev/gemini-api/docs/api-key
    - **Environments:** Production, Preview, Development
+
+   **B. GitHub Token (REQUIRED for rate limits)**
+   - **Name:** `GITHUB_TOKEN`
+   - **Value:** Create at https://github.com/settings/tokens/new
+     - **Scopes:** None needed for public repos (leave all unchecked)
+     - **Note:** "Aegis-3 GitHub API"
+     - **Expiration:** 90 days or No expiration
+   - **Environments:** Production, Preview, Development
+   - **Why:** Increases GitHub API rate limit from 60/hour to 5000/hour
+
 3. Click **Save**
 
 ---

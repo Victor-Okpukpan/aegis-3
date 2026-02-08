@@ -1,7 +1,10 @@
 import { Octokit } from 'octokit';
 import { nanoid } from 'nanoid';
 
-const octokit = new Octokit();
+// Initialize Octokit with auth token for higher rate limits (5000/hr vs 60/hr)
+const octokit = new Octokit({
+  auth: process.env.GITHUB_TOKEN || undefined,
+});
 
 /**
  * Extract owner and repo name from GitHub URL
