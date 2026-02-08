@@ -1,11 +1,7 @@
-import simpleGit, { SimpleGit } from 'simple-git';
-import fs from 'fs/promises';
-import path from 'path';
+import { Octokit } from 'octokit';
 import { nanoid } from 'nanoid';
 
-const TEMP_DIR = process.env.VERCEL 
-  ? '/tmp/repos' 
-  : path.join(process.cwd(), '.temp', 'repos');
+const octokit = new Octokit();
 
 /**
  * Extract owner and repo name from GitHub URL
@@ -27,62 +23,88 @@ export function parseGitHubUrl(url: string): { owner: string; repo: string } | n
 }
 
 /**
- * Clone a GitHub repository to temporary directory
+ * Fetch Solidity files from GitHub repository via API
  */
 export async function cloneRepository(
   repoUrl: string,
   onProgress?: (message: string) => void
 ): Promise<{ id: string; path: string }> {
   const id = nanoid(10);
-  const repoPath = path.join(TEMP_DIR, id);
-
-  try {
-    // Ensure temp directory exists
-    await fs.mkdir(TEMP_DIR, { recursive: true });
-
-    onProgress?.('[STATUS] CLONING REPO...');
-    
-    const git: SimpleGit = simpleGit();
-    await git.clone(repoUrl, repoPath, ['--depth', '1']);
-
-    onProgress?.('[STATUS] CLONE COMPLETE');
-
-    return { id, path: repoPath };
-  } catch (error) {
-    onProgress?.('[ERROR] CLONE FAILED');
-    throw new Error(`Failed to clone repository: ${error}`);
+  
+  onProgress?.('[STATUS] FETCHING REPO VIA API...');
+  
+  const parsed = parseGitHubUrl(repoUrl);
+  if (!parsed) {
+    throw new Error('Invalid GitHub URL');
   }
+
+  onProgress?.('[STATUS] FETCH COMPLETE');
+  
+  // Return ID and a placeholder path (API-based, no actual path)
+  return { id, path: `api:${parsed.owner}/${parsed.repo}` };
 }
 
 /**
- * Recursively find all Solidity files in a directory
+ * Fetch all Solidity files from GitHub repository via API
  */
-export async function findSolidityFiles(dir: string): Promise<string[]> {
-  const files: string[] = [];
+async function fetchSolidityFilesFromGitHub(
+  owner: string,
+  repo: string,
+  onProgress?: (message: string) => void
+): Promise<Array<{ path: string; content: string }>> {
+  try {
+    // Get the default branch
+    const { data: repoData } = await octokit.rest.repos.get({ owner, repo });
+    const defaultBranch = repoData.default_branch;
 
-  async function traverse(currentPath: string) {
-    const entries = await fs.readdir(currentPath, { withFileTypes: true });
+    // Get the repository tree (recursive)
+    const { data: tree } = await octokit.rest.git.getTree({
+      owner,
+      repo,
+      tree_sha: defaultBranch,
+      recursive: 'true',
+    });
 
-    for (const entry of entries) {
-      const fullPath = path.join(currentPath, entry.name);
+    // Filter for .sol files
+    const solFiles = tree.tree.filter(
+      (item) => item.type === 'blob' && item.path?.endsWith('.sol')
+    );
 
-      // Skip common ignored directories
-      if (entry.isDirectory()) {
-        if (!['node_modules', '.git', 'dist', 'build', 'out'].includes(entry.name)) {
-          await traverse(fullPath);
-        }
-      } else if (entry.name.endsWith('.sol')) {
-        files.push(fullPath);
+    if (solFiles.length === 0) {
+      throw new Error('No Solidity files found in repository');
+    }
+
+    onProgress?.(`[STATUS] FOUND ${solFiles.length} CONTRACTS`);
+
+    // Fetch content for each .sol file
+    const files: Array<{ path: string; content: string }> = [];
+    
+    for (const file of solFiles) {
+      if (!file.path) continue;
+
+      try {
+        const { data: blob } = await octokit.rest.git.getBlob({
+          owner,
+          repo,
+          file_sha: file.sha!,
+        });
+
+        // Decode base64 content
+        const content = Buffer.from(blob.content, 'base64').toString('utf-8');
+        files.push({ path: file.path, content });
+      } catch (error) {
+        console.error(`Failed to fetch ${file.path}:`, error);
       }
     }
-  }
 
-  await traverse(dir);
-  return files;
+    return files;
+  } catch (error: any) {
+    throw new Error(`Failed to fetch repository files: ${error.message}`);
+  }
 }
 
 /**
- * Read and flatten all Solidity files into a context-rich string
+ * Fetch and flatten all Solidity files from GitHub via API
  */
 export async function flattenSolidityCode(
   repoPath: string,
@@ -90,27 +112,24 @@ export async function flattenSolidityCode(
 ): Promise<{ code: string; files: Array<{ path: string; content: string }> }> {
   onProgress?.('[STATUS] MAPPING ARCHITECTURE...');
 
-  const solidityFiles = await findSolidityFiles(repoPath);
-  
-  if (solidityFiles.length === 0) {
-    throw new Error('No Solidity files found in repository');
+  // Parse the repoPath (format: "api:owner/repo")
+  const match = repoPath.match(/^api:(.+?)\/(.+)$/);
+  if (!match) {
+    throw new Error('Invalid repository path format');
   }
 
-  onProgress?.(`[STATUS] FOUND ${solidityFiles.length} CONTRACTS`);
+  const [, owner, repo] = match;
 
-  const files: Array<{ path: string; content: string }> = [];
+  // Fetch files from GitHub API
+  const files = await fetchSolidityFilesFromGitHub(owner, repo, onProgress);
+
+  // Flatten into a single string
   let flattenedCode = '';
-
-  for (const filePath of solidityFiles) {
-    const content = await fs.readFile(filePath, 'utf-8');
-    const relativePath = filePath.replace(repoPath, '').replace(/^\//, '');
-
-    files.push({ path: relativePath, content });
-
+  for (const file of files) {
     flattenedCode += `\n\n// ========================================\n`;
-    flattenedCode += `// FILE: ${relativePath}\n`;
+    flattenedCode += `// FILE: ${file.path}\n`;
     flattenedCode += `// ========================================\n\n`;
-    flattenedCode += content;
+    flattenedCode += file.content;
   }
 
   onProgress?.('[STATUS] ARCHITECTURE MAPPED');
@@ -119,15 +138,11 @@ export async function flattenSolidityCode(
 }
 
 /**
- * Clean up temporary repository directory
+ * Cleanup repository (no-op for API-based fetching)
  */
 export async function cleanupRepository(id: string): Promise<void> {
-  const repoPath = path.join(TEMP_DIR, id);
-  try {
-    await fs.rm(repoPath, { recursive: true, force: true });
-  } catch (error) {
-    console.error(`Failed to cleanup repository ${id}:`, error);
-  }
+  // No cleanup needed for API-based fetching (no temp files)
+  return Promise.resolve();
 }
 
 /**

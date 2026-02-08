@@ -15,6 +15,8 @@ Or use the Vercel dashboard:
 2. Import your GitHub repository
 3. Click "Deploy"
 
+**Note:** Aegis-3 uses GitHub's REST API to fetch repository files (no git clone required), making it fully compatible with Vercel's serverless environment.
+
 ---
 
 ## Step 2: Add Redis Storage (REQUIRED)
