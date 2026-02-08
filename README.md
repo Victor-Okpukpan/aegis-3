@@ -41,6 +41,7 @@ Findings (Severity, Lines, Historical Refs, PoC Scaffolds)
 
 ## Quick Start
 
+### Local Development
 ```bash
 # 1. Clone & install
 git clone https://github.com/Victor-Okpukpan/aegis-3
@@ -53,6 +54,23 @@ echo "GEMINI_API_KEY=your_key_here" > .env
 npm run dev
 # Open http://localhost:3000
 ```
+
+### Vercel Deployment (Recommended)
+```bash
+# 1. Deploy to Vercel
+vercel --prod
+
+# 2. Add Redis storage (REQUIRED)
+# Dashboard → Storage → Create Upstash Redis → Link to project
+# Auto-creates REDIS_URL environment variable
+
+# 3. Add Gemini API key
+# Settings → Environment Variables → GEMINI_API_KEY
+```
+
+> **Full deployment guide:** See [VERCEL_SETUP.md](./VERCEL_SETUP.md) for step-by-step instructions
+> 
+> **Note:** Redis storage (via Upstash) is required for persistent storage on Vercel. Local dev uses filesystem automatically.
 
 ---
 
