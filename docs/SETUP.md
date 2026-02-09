@@ -296,7 +296,7 @@ aegis/
 
 ## Troubleshooting
 
-### Issue 1: "Cannot find module 'simple-git'"
+### Issue 1: "Cannot find module 'octokit'"
 
 **Cause:** Dependencies not installed
 
@@ -483,9 +483,9 @@ Route (app)                              Size     First Load JS
 
 **Upgrade to Paid:** https://ai.google.dev/pricing
 
-### GitHub API (for private repos)
+### GitHub API (for higher rate limits)
 
-If cloning private repos, add GitHub token:
+Add GitHub token for increased rate limits (60/hr → 5000/hr):
 
 ```env
 # .env
@@ -496,10 +496,8 @@ GITHUB_TOKEN=ghp_your_token_here
 
 ```typescript
 // lib/github.ts
-await git.clone(repoUrl, repoPath, {
-  '--depth': 1,
-  '--single-branch': true,
-  '--config': `http.extraHeader=AUTHORIZATION: token ${process.env.GITHUB_TOKEN}`
+const octokit = new Octokit({
+  auth: process.env.GITHUB_TOKEN || undefined,
 });
 ```
 

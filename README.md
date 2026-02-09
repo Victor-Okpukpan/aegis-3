@@ -2,7 +2,7 @@
 
 **Protocol-level security triage using historical exploit reasoning.**
 
-**Live Demo:** [aegis-3.vercel.app](https://aegis-3.vercel.app/) | **Video:** [3-min demo](#)
+**Live Demo:** [aegis-3.vercel.app](https://aegis-3.vercel.app/) | **Video:** [3-min demo](https://youtu.be/eDFgU5e1xJA)
 
 Built for the [Gemini 3 Hackathon](https://gemini3.devpost.com/)
 
@@ -97,8 +97,7 @@ npm run dev
    - Historical references with pattern match scores (e.g., "Matches Compound rounding error patterns")
    - Copy-paste Foundry PoC scaffold to verify locally
 
-**See it in action:** [3-minute demo video](#) (coming soon)
-
+**See it in action:** [3-minute demo video](https://youtu.be/eDFgU5e1xJA)
 ---
 
 ## Why Gemini 3?
@@ -161,7 +160,7 @@ npm run dev
 |--------|-------|
 | **Indexed Findings** | 69,641 Solodit reports across 31 DeFi categories |
 | **Analysis Time** | 2-4 minutes average (local) |
-| **Context Window** | Up to 1M tokens (Gemini 3) |
+| **Context Window** | 1M tokens (Gemini 3) |
 | **Deployment** | Local only (Vercel demo is showcase-only) |
 
 ---

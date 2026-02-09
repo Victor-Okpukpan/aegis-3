@@ -19,7 +19,7 @@ Complete documentation for Aegis-3 API endpoints.
 POST /api/ingest
 ```
 
-**Description:** Clone a GitHub repository and prepare it for analysis.
+**Description:** Fetch a GitHub repository via REST API and start analysis automatically.
 
 **Request Body:**
 
@@ -51,7 +51,7 @@ POST /api/ingest
 
 ```json
 {
-  "error": "Failed to clone repository: Network timeout"
+  "error": "Failed to fetch repository: Network timeout"
 }
 ```
 
@@ -80,62 +80,7 @@ console.log('Audit ID:', audit_id);
 
 ---
 
-### 2. Start Analysis
-
-```http
-POST /api/analyze
-```
-
-**Description:** Trigger the two-phase Gemini analysis on an ingested repository.
-
-**Request Body:**
-
-```json
-{
-  "audit_id": "abc123xyz789"
-}
-```
-
-**Response (202 Accepted):**
-
-```json
-{
-  "status": "analyzing",
-  "message": "Analysis started"
-}
-```
-
-**Response (404 Not Found):**
-
-```json
-{
-  "error": "Audit not found"
-}
-```
-
-**Response (400 Bad Request):**
-
-```json
-{
-  "error": "Audit already completed"
-}
-```
-
-**Example (curl):**
-
-```bash
-curl -X POST http://localhost:3000/api/analyze \
-  -H "Content-Type: application/json" \
-  -d '{"audit_id":"abc123xyz789"}'
-```
-
-**Notes:**
-- Analysis runs asynchronously (30-60 seconds)
-- Poll `/api/audits?id={audit_id}` for status updates
-
----
-
-### 3. Get Audit Results
+### 2. Get Audit Results
 
 ```http
 GET /api/audits?id={audit_id}
@@ -252,7 +197,7 @@ async function pollAudit(auditId) {
       clearInterval(poll);
       console.error('Error:', audit.system_map);
     }
-  }, 3000); // Poll every 3 seconds
+  }, 2000); // Poll every 2 seconds
 }
 
 pollAudit('abc123xyz789');
@@ -260,7 +205,7 @@ pollAudit('abc123xyz789');
 
 ---
 
-### 4. Get Recent Audits
+### 3. Get Recent Audits
 
 ```http
 GET /api/audits
@@ -295,7 +240,7 @@ curl http://localhost:3000/api/audits
 
 ---
 
-### 5. Recovery System
+### 4. Recovery System
 
 ```http
 POST /api/recovery
@@ -477,8 +422,8 @@ const REPO_URL = 'https://github.com/OpenZeppelin/openzeppelin-contracts';
 const API_BASE = 'http://localhost:3000';
 
 async function auditRepository(repoUrl) {
-  // 1. Ingest repository
-  console.log('Ingesting repository...');
+  // 1. Ingest repository (analysis starts automatically)
+  console.log('Starting audit...');
   const ingestResponse = await fetch(`${API_BASE}/api/ingest`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -487,16 +432,9 @@ async function auditRepository(repoUrl) {
   
   const { audit_id } = await ingestResponse.json();
   console.log('Audit ID:', audit_id);
+  console.log('Analysis started automatically...');
   
-  // 2. Start analysis
-  console.log('Starting analysis...');
-  await fetch(`${API_BASE}/api/analyze`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ audit_id })
-  });
-  
-  // 3. Poll for completion
+  // 2. Poll for completion
   console.log('Waiting for analysis...');
   let audit;
   while (true) {
@@ -507,10 +445,10 @@ async function auditRepository(repoUrl) {
       break;
     }
     
-    await new Promise(resolve => setTimeout(resolve, 3000)); // Wait 3s
+    await new Promise(resolve => setTimeout(resolve, 2000)); // Wait 2s
   }
   
-  // 4. Display results
+  // 3. Display results
   if (audit.status === 'completed') {
     console.log(`\n✓ Analysis complete! Found ${audit.findings.length} issues:\n`);
     
@@ -544,17 +482,12 @@ npm run test:api
 **Manual testing:**
 
 ```bash
-# Test ingest endpoint
+# Test ingest endpoint (starts analysis automatically)
 curl -X POST http://localhost:3000/api/ingest \
   -H "Content-Type: application/json" \
   -d '{"repo_url":"https://github.com/OpenZeppelin/openzeppelin-contracts"}'
 
-# Copy audit_id from response, then test analyze
-curl -X POST http://localhost:3000/api/analyze \
-  -H "Content-Type: application/json" \
-  -d '{"audit_id":"YOUR_AUDIT_ID"}'
-
-# Poll results
+# Copy audit_id from response, then poll for results
 curl http://localhost:3000/api/audits?id=YOUR_AUDIT_ID
 ```
 

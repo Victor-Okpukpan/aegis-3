@@ -16,7 +16,7 @@ Deep dive into Aegis-3's adversarial reasoning engine.
                       ↓
 ┌─────────────────────────────────────────────────────────────┐
 │                   INGESTION ENGINE                           │
-│  • Clone repo (simple-git)                                   │
+│  • Fetch repo via GitHub REST API (Octokit)                  │
 │  • Extract .sol files recursively                            │
 │  • Flatten to unified context string                         │
 └─────────────────────┬───────────────────────────────────────┘
@@ -339,7 +339,7 @@ try {
 - **Styling:** Tailwind CSS 4
 - **Code Editor:** Monaco Editor
 - **Notifications:** react-hot-toast
-- **Git Ops:** simple-git
+- **GitHub API:** Octokit (REST API)
 
 ### Design Philosophy: Tactical Minimalism
 
@@ -427,10 +427,10 @@ monaco.editor.defineTheme('aegis-dark', {
 useEffect(() => {
   fetchAudit();
   
-  // Poll every 3 seconds
+  // Poll every 2 seconds
   const interval = setInterval(() => {
     fetchAudit();
-  }, 3000);
+  }, 2000);
   
   return () => clearInterval(interval);
 }, [auditId]);
@@ -463,13 +463,13 @@ POST /api/ingest
   → Create audit record (status: 'pending')
   → Start background processing
 
-// 2. Background cloning
+// 2. Background fetching
 async function processRepository() {
   const { id, path } = await cloneRepository(repoUrl);
   const { code, files } = await flattenSolidityCode(path);
   
   await updateAuditStatus(auditId, 'analyzing', {
-    system_map: 'Repository cloned successfully'
+    system_map: 'Repository fetched successfully'
   });
 }
 
@@ -753,7 +753,7 @@ if (!repoUrl || !isValidGitHubUrl(repoUrl)) {
 | **RAG-Lite** | Pinecone, Weaviate | Faster, simpler, zero API costs |
 | **Monaco** | CodeMirror, Ace | Industry standard, excellent Solidity support |
 | **Tailwind** | CSS Modules, Styled Components | Fastest prototyping, excellent utilities |
-| **simple-git** | nodegit, isomorphic-git | Simplest API, good error handling |
+| **Octokit** | nodegit, isomorphic-git | Serverless-compatible, no git binary required |
 
 ---
 
