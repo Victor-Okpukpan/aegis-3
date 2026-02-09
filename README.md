@@ -2,6 +2,8 @@
 
 **Protocol-level security triage using historical exploit reasoning.**
 
+![Aegis-3 Homepage](./docs/images/homepage.png)
+
 **Live Demo:** [aegis-3.vercel.app](https://aegis-3.vercel.app/) | **Video:** [3-min demo](https://youtu.be/eDFgU5e1xJA)
 
 Built for the [Gemini 3 Hackathon](https://gemini3.devpost.com/)
@@ -24,6 +26,8 @@ Built for auditors and protocol teams who need to identify **high-risk attack pa
 - Not a formal verifier
 - Not a replacement for manual audits
 - Not guaranteed to catch novel, zero-history exploits
+
+![Aegis-3 Audit Findings](./docs/images/findings.png)
 
 ---
 

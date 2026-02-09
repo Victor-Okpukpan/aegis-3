@@ -12,6 +12,7 @@
     "@google/generative-ai": "^0.24.1",
     "@monaco-editor/react": "^4.7.0",
     "date-fns": "^4.1.0",
+    "dotenv": "^17.2.4",
     "lucide-react": "^0.563.0",
     "nanoid": "^5.1.6",
     "next": "16.1.6",
